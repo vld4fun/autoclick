@@ -1,0 +1,417 @@
+<<<<<DOCKER>>>>>
+
+Pornire docker image cu port definit de comanda:
+docker container run -p 5000:5000 in28min/todo-rest-api-h2:1.0.0.RELEASE
+sau prescurtat
+docker run -p 5000:5000 in28min/todo-rest-api-h2:1.0.0.RELEASE
+
+Pentru a rula docker image in background cu logs:
+docker container run -p 5000:5000 -d in28min/todo-rest-api-h2:1.0.0.RELEASE
+sau prescurtat
+docker run -p 5000:5000 -d in28min/todo-rest-api-h2:1.0.0.RELEASE
+
+Pentru a afisa logurile dockerului:
+docker logs dc7026993faee509437c7691cdcfe0b66dfbd2d14dd568fb4ee76c99a1c2ba53
+
+
+Pentru a urmari logurile dockerului:
+docker logs -f dc7026993faee509437c7691cdcfe0b66dfbd2d14dd568fb4ee76c99a1c2ba53
+
+CTRL + C sa inchizi in consola
+
+Pentru a afisa toate containerele care ruleaza in prezent
+docker container ps
+
+Pentru a vedea imaginile active
+docker images
+
+Pentru a afisa toate containerele care ruleaza in prezent si care au fost oprite
+docker container ps - a
+
+Pentru a opri un container dupa ID-ul lui:
+docker container stop a59199 (ex)
+
+Pentru a crea un nou tag pentru aceeasi imagine:
+docker tag in28min/todo-rest-api-h2:0.0.1-SNAPSHOT in28min/todo-rest-api-h2:latest
+
+Doar descarcare imaginea pe local, fara rulare
+docker pull mysql (daca vrei versiunea setezi tag-ul)
+
+Pentru a vedea imaginile oficiale (Dockerhub)
+docker search mysql
+
+Pentru a vendea toti pasii parcursi de docker cand a creat imaginea pe local
+docker image history 4073e6a6f542
+
+Pentru a afla mai multe informatii despre imaginea creata pe local
+docker image inspect 4073e6a6f542
+
+Pentru a sterge o imagine de pe local dupa ID
+docker image remove 4073e6a6f542
+
+Pentru a pune pauza si a reveni la un container
+docker container pause 3288
+docker container unpause 3288
+
+Pentru a vedea mai multe informatii despre un containter de pe local
+docker container inspect 3288
+
+Pentru a sterge toate containerele oprite
+docker container prune
+
+Pentru a opri un container
+docker container stop 3288
+SIGTERM -> graceful shutdown --> cand opresti un container, semnalul trimis catre el se numeste SIGTERM (10 secunde pana se opreste)
+
+Pentru a opri instant un container
+docker container kill 3288
+SIGKILL -> immediatelly terminates process --> cand opresti un container fortat direct, fara timp de oprire
+
+Pentru a porni un containter cu restart=always si el v-a porni mereu cand se restarteaza sau inchide din greseala docker app (engine)
+docker container run -p 5000:5000 -d --restart=always in28min/todo-rest-api-h2:0.0.1-SNAPSHOT
+
+Pentru a loga toata actiunile facute in docker
+docker events
+
+Pentru a vedea toate procesele care ruleaza intr-un container
+docker top 3288
+
+Pentru a vedea detalii despre cat ocupa, cat papa procesorul, per container etc
+docker stats 3288
+
+Pentru a crea un container definind memoria alocata, cota de la procesorul
+docker run -p 5001:5000 -m 512m --cpu-quota 5000 -d in28min/todo-rest-api-h2:0.0.1-SNAPSHOT
+
+Pentru a vedea detalii despre docker system
+docker system df
+
+Pentru a loga pe local tot chainu de microservicii (pentru debug, etc)
+docker run -p 9411:9411 openzipkin/zipkin:2.23
+
+
+Pentru a porni automat containerele folosind bild-urile facute in maven (spring-boot:build-image)
+docker-compose up
+
+Pentru debug docker:
+Try adding restart: always to zipkin-server in docker-compose.yaml
+
+  zipkin-server:
+    image: openzipkin/zipkin:2.23
+    mem_limit: 300m
+    ports:
+      - "9411:9411"
+    networks:
+      - currency-network
+    restart: always #Restart if there is a problem starting up
+
+Concluzii:
+O imagine poate avea mai multe containere (instante pe mai multe porturi, de ex).
+
+
+
+
+<<<<KUBERNETES>>> cu google cloud engine
+1. Creare cluster
+2. Conectare/startare Cloud Shell (terminal)
+3. Conectare la clusterul din Google Cloud (se copiaza link-ul de la conectare):
+gcloud containter clusters get-credentials in28minutes-cluster -zone us-central1-a --project solid-course-258105
+4. Cea mai uzuala comanda:
+kubectl
+
+Pentru a vedea versiunea:
+kubectl version
+
+Pentru a crea un deploy in cluster cu o imagine din dockerhub (aplicatie)
+kubectl create deployment hello-world-rest-api --image=in28minutes/hello-world-rest-api:0.0.1.RELEASE
+
+Pentru a expune aplicatia deployata in lume:
+kubectl expose deployment hello-world-rest-api --type=LoadBalancer --port=8080
+
+
+kubectl get events
+kubectl get pods
+kubectl get replicaset
+kubectl get deployment
+kubectl get service
+
+PODS: este cea mai mica unitate implementabila din kubernetes. Ca sa faci un container ai nevoie de un pod, iar un pod poate avea mai multe containere.
+Un pod este o colectie de containere care pot rula pe un host (ip unic)
+kubectl get pods --all-namespaces
+kubectl get pods -o wide
+kubectl explain pods
+kubectl get pods -o wide
+kubectl delete pod hello-world-rest-api-58ff5dd898-62l9d
+
+REPLICASETS: defineste numarul de pods care ruleaza in permanenta. In cazul in care stergi un pod, replicaset defineste un nou pod pentru a nu face downtime la aplicatie.
+
+Pentru a seta numarul de pods la o aplicatie (instante)
+kubectl scale deployment hello-world-rest-api --replicas=3
+
+kubectl get replicasets
+kubectl get replicaset
+kubectl get pods
+kubectl get replicaset
+kubectl get events
+kubectl get events --sort-by=.metadata.creationTimestamp - sortare evenimente dupa start time
+
+
+Deployment in Kubernetes: folosit pentru actualizarea de noi versiuni de aplicatii fara downtime.
+Cand se incearca un deployment (de la v1 la v2), se creeaza replicaset nou, dupa care se creaza treptat cate un pod la v2 pentru fiecare pod inchis de la v1 pana se ajunge la 0 pods, iar totul se muta pe v2
+Setare versiune noua de aplicatie: 
+kubectl set image deployment hello-world-rest-api hello-world-rest-api=in28min/hello-world-rest-api:0.0.2.RELEASE
+
+Service: ajuta la stergerea si crearea automata a unui pod nou ca utilizatorul sa foloseasca acelasi URL chiar daca IP-ul podului se schimba.
+Un service se creeaza cand este se expune deploymentul (se creeaza cu un ip cu care se poate accesa aplicatia): kubectl expose deployment hello-world-rest-api --type=LoadBalancer --port=8080
+In spatele service este un load balancer care a fost creat odata cu servicele. Load Balanceru ajuta la legarea pod-urilor (instantelor) (backend) la un frontend (adica adresa aplicatiei (URL)) ca sa ramana neschimbata.
+Un ClusterIP poate fi accesat doar din interiorul cluster-ului respectiv.
+
+Pentru a crea yaml pentru o aplicatie deploiata deja:
+kubectl get deployment currency-exchange -o yaml >> deployment.yaml 
+
+Pentru a crea yaml pentru un serviciu care se v-a completa pentru fisierul deployment.yaml de mai sus:
+kubectl get service currency-exchange -o yaml >> service.yaml 
+ 
+ 
+Dupa ce modifici din IDE fisierul poti sa vezi diferentele din consola kubernetes: 
+kubectl diff -f deployment.yaml
+
+Daca vrei sa aplici modificarile comanda chiar daca deploymentu nu a fost facut (poti sa faci deploymentul aplicatiei folosim yaml-ul):
+kubectl apply -f deployment.yaml
+
+Daca vrei sa creezi configmap:
+kubectl create configmap currency-conversion --from-literal=CURRENCY_EXCHANGE_URI=http://currency-exchange
+kubectl get configmap
+ 
+kubectl get configmap currency-conversion -o yaml >> configmap.yaml
+
+Pentru a deploya o aplicatie fara downtime se configureaza in deployment.yaml "Liveness and Readiness Probes" (definite in springboot /actuator). 
+Aceste configurari ajuta kubernetes sa identifice problemele de la deploy si sa le rezolve rapid fara downtime, daca e o problema, nu o sa mute traficul pe noul pod creat de deploy.
+readinessProbe:
+	httpget:
+		port: 8000
+		path: /actuator/health/readiness
+livenessProbe:
+	httpget:
+		port: 8000
+		path: /actuator/health/liveness
+
+Autoscalare in functie de nevoia aplicatiei:
+1. replicas: 2 .... (config manual in yaml-ul de deploy) --> kubectl scale deployment hello-world-rest-api --replicas=3
+2. automat prin comanda --> kubectl autoscale deployment currency-exchange --min=1 --max=3 --cpu-percent=5 si de vazut statusul lor -->  kubectl get hpa
+informatii dupa autoscalare:
+kubectl top pod
+kubectl top nodes
+kubectl get hpa --> hpa = horizontal pod autoscaler
+kubectl delete hpa currency-exchange - stergere autoscalare dar raman pods si trebuie facut redeploy cu yaml-ul cu replicas = 1 (scalarea manuala)
+
+SYS, SYSTEM, PDBADMIN  admin
+localhost:1521/XEPDB1
+EM Express URL: https://localhost:5500/em
+
+
+
+
+Comenzi KUBERNETES:
+
+docker run -p 8080:8080 in28min/hello-world-rest-api:0.0.1.RELEASE
+ 
+kubectl create deployment hello-world-rest-api --image=in28min/hello-world-rest-api:0.0.1.RELEASE
+kubectl expose deployment hello-world-rest-api --type=LoadBalancer --port=8080
+kubectl scale deployment hello-world-rest-api --replicas=3
+
+kubectl autoscale deployment hello-world-rest-api --max=10 --cpu-percent=70
+kubectl edit deployment hello-world-rest-api #minReadySeconds: 15
+kubectl set image deployment hello-world-rest-api hello-world-rest-api=in28min/hello-world-rest-api:0.0.2.RELEASE
+ 
+gcloud container clusters get-credentials in28minutes-cluster --zone us-central1-a --project solid-course-258105
+kubectl create deployment hello-world-rest-api --image=in28min/hello-world-rest-api:0.0.1.RELEASE
+kubectl expose deployment hello-world-rest-api --type=LoadBalancer --port=8080
+kubectl set image deployment hello-world-rest-api hello-world-rest-api=DUMMY_IMAGE:TEST
+kubectl get events --sort-by=.metadata.creationTimestamp
+kubectl set image deployment hello-world-rest-api hello-world-rest-api=in28min/hello-world-rest-api:0.0.2.RELEASE
+kubectl get events --sort-by=.metadata.creationTimestamp
+kubectl get componentstatuses
+
+ 
+kubectl describe pod hello-world-rest-api-58ff5dd898-9trh2
+ 
+
+
+ 
+kubectl get rs
+kubectl get rs -o wide
+kubectl set image deployment hello-world-rest-api hello-world-rest-api=DUMMY_IMAGE:TEST
+kubectl get rs -o wide
+kubectl get pods
+kubectl describe pod hello-world-rest-api-85995ddd5c-msjsm
+kubectl get events --sort-by=.metadata.creationTimestamp
+ 
+kubectl set image deployment hello-world-rest-api hello-world-rest-api=in28min/hello-world-rest-api:0.0.2.RELEASE
+kubectl get events --sort-by=.metadata.creationTimestamp
+kubectl get pods -o wide
+kubectl delete pod hello-world-rest-api-67c79fd44f-n6c7l
+kubectl get pods -o wide
+kubectl delete pod hello-world-rest-api-67c79fd44f-8bhdt
+ 
+gcloud container clusters get-credentials in28minutes-cluster --zone us-central1-c --project solid-course-258105
+docker login
+docker push in28min/mmv2-currency-exchange-service:0.0.11-SNAPSHOT
+docker push in28min/mmv2-currency-conversion-service:0.0.11-SNAPSHOT
+ 
+kubectl create deployment currency-exchange --image=in28min/mmv2-currency-exchange-service:0.0.11-SNAPSHOT
+kubectl expose deployment currency-exchange --type=LoadBalancer --port=8000
+kubectl get svc
+kubectl get services
+kubectl get pods
+kubectl get po
+kubectl get replicaset
+kubectl get rs
+kubectl get all
+ 
+kubectl create deployment currency-conversion --image=in28min/mmv2-currency-conversion-service:0.0.11-SNAPSHOT
+kubectl expose deployment currency-conversion --type=LoadBalancer --port=8100
+ 
+kubectl get svc --watch
+ 
+kubectl get deployments
+ 
+
+ 
+kubectl delete all -l app=currency-exchange
+kubectl delete all -l app=currency-conversion
+ 
+kubectl rollout history deployment currency-conversion
+kubectl rollout history deployment currency-exchange
+kubectl rollout undo deployment currency-exchange --to-revision=1
+ 
+kubectl logs currency-exchange-9fc6f979b-2gmn8
+kubectl logs -f currency-exchange-9fc6f979b-2gmn8 
+ 
+kubectl autoscale deployment currency-exchange --min=1 --max=3 --cpu-percent=5 
+kubectl get hpa
+ 
+kubectl top pod
+kubectl top nodes
+kubectl get hpa
+kubectl delete hpa currency-exchange
+ 
+kubectl create configmap currency-conversion --from-literal=CURRENCY_EXCHANGE_URI=http://currency-exchange
+kubectl get configmap
+ 
+kubectl get configmap currency-conversion -o yaml >> configmap.yaml
+ 
+watch -n 0.1 curl http://34.66.241.150:8100/currency-conversion-feign/from/USD/to/INR/quantity/10
+ 
+docker push in28min/mmv2-currency-conversion-service:0.0.12-SNAPSHOT
+docker push in28min/mmv2-currency-exchange-service:0.0.12-SNAPSHOT
+
+
+
+Eliminare PORT duplicat:
+	netstat -ano | findstr <port used>
+
+  TCP    0.0.0.0:*<port used>*  0.0.0.0:0              LISTENING       *<pid>*
+  TCP    [::]:*<port used>*     [::]:0                 LISTENING       *<pid>*
+
+	taskkill /F /PID <pid>
+SUCCESS: The process with PID *<pid>* has been terminated.
+
+
+
+
+
+
+
+
+
+<<<<<<<SQL>>>>>>>>
+
+
+create table user(id int UNSIGNED primary key not null auto_increment, name varchar(100), email varchar(100));  
+
+
+
+CREATE SEQUENCE user_seq START WITH 1;
+
+CREATE TABLE USERS (
+  ID NUMBER(10) DEFAULT user_seq.nextval NOT NULL,
+  NAME varchar(100),
+  EMAIL varchar(100));
+
+
+ALTER TABLE users ADD (
+  CONSTRAINT user_pk PRIMARY KEY (ID));
+
+
+select * from users;
+
+
+
+CREATE SEQUENCE country_seq START WITH 1;
+
+
+CREATE TABLE COUNTRY_DETAILS (
+  ID NUMBER(10) DEFAULT country_seq.nextval NOT NULL,
+  COUNTRY varchar(100),
+  DETAILS clob);
+
+
+ALTER TABLE COUNTRY_DETAILS ADD (
+  CONSTRAINT country_pk PRIMARY KEY (ID));
+
+
+
+ALTER TABLE COUNTRY_DETAILS  
+MODIFY (DETAILS BLOB);
+
+select * from users;
+
+select * from COUNTRY_DETAILS;
+
+insert into COUNTRY_DETAILS (id, country, details)
+values ('1', 'ROMANIA', 'It was a scrape that he hardly noticed. Sure, there was a bit of blood but it was minor compared to most of the other cuts and bruises he acquired on his adventures. There was no way he could know that the rock that produced the cut had alien genetic material on it that was now racing through his bloodstream. He felt perfectly normal and continued his adventure with no knowledge of what was about to happen to him.
+It went through such rapid contortions that the little bear was forced to change his hold on it so many times he became confused in the darkness, and could not, for the life of him, tell whether he held the sheep right side up, or upside down. But that point was decided for him a moment later by the animal itself, who, with a sudden twist, jabbed its horns so hard into his lowest ribs that he gave a grunt of anger and disgust.
+She has seen this scene before. It had come to her in dreams many times before. She had to pinch herself to make sure it wasnt a dream again. As her fingers squeezed against her arm, she felt the pain. It was this pain that immediately woke her up.
+Betty was a creature of habit and she thought she liked it that way. That was until Dave showed up in her life. She now had a choice to make and it would determine whether her lie remained the same or if it would change forever.
+She reached her goal, exhausted. Even more chilling to her was that the euphoria that she thought shed feel upon reaching it wasnt there. Something wasnt right. Was this the only feeling shed have for over five years of hard work?
+It wasnt that he hated her. It was simply that he didt like her much. It was difficult for him to explain this to her, and even more difficult for her to truly understand. She was in love and wanted him to feel the same way. He didnt, and no matter how he tried to explain to her she refused to listen or to understand.
+Should he write it down? That was the question running through his mind. He couldnt believe what had just happened and he knew nobody else would believe him as well. Even if he documented what had happened by writing it down, he still didnt believe anyone would still believe it. So the question remained. Was it be worth it to actually write it down?
+Heres the thing. She doesnt have anything to prove, but she is going to anyway. Thats just her character. She knows she doesnt have to, but she still will just to show you that she can. Doubt her more and shell prove she can again. We all already know this and you will too.
+Its an unfortunate reality that we dont teach people how to make money (beyond getting a 9 to 5 job) as part of our education system. The truth is there are a lot of different, legitimate ways to make money. That doesnt mean they are easy and that you wont have to work hard to succeed, but it does mean that if youre willing to open your mind a bit you dont have to be stuck in an office from 9 to 5 for the next fifty years o your life.
+The house was located at the top of the hill at the end of a winding road. It wasnt obvious that the house was there, but everyone in town knew that it existed. They were just all too afraid to ever go and see it in person.
+Ive rented a car in Las Vegas and have reserved a hotel in Twentynine Palms which is just north of Joshua Tree. Well drive from Las Vegas through Mojave National Preserve and possibly do a short hike on our way down. Then spend all day on Monday at Joshua Tree. We can decide the next morning if we want to do more in Joshua Tree or Mojave before we head back.
+The young man wanted a role model. He looked long and hard in his youth, but that role model never materialized. His only choice was to embrace all the people in his life he didnt want to be like.
+Twenty-five stars were neatly placed on the piece of paper. There was room for five more stars but they would be difficult ones to earn. It had taken years to earn the first twenty-five, and they were considered the "easy" ones.');
+
+
+
+--ID
+--COUNTRY
+--DETAILS
+
+select * from country_details order by id asc;
+
+insert into country_details
+(id, country, details)
+values ((select max(id)+1 from  country_details), 'GERMANIA', '');
+
+
+update country_details
+set details = 'If youre looking for random paragraphs, youve come to the right place. When a random word or a random sentence isntIf youre looking for random paragraphs, youve come to the right place. When a random word or a random sentence isntIf youre looking for random paragraphs, youve come to the right place. When a random word or a random sentence isnt'
+where id = 1;
+
+
+SELECT country_seq.nextval FROM dual;
+
+(select max(id)+1 from COUNTRY_DETAILS) --> ?
+
+
+<<<<<<<SQL>>>>>>>>
+
+
+
+
+
+
+
+
